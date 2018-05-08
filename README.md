@@ -1,2 +1,1 @@
-# PlanAhead-workspace
 # SDK-workspace
