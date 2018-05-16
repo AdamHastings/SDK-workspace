@@ -26,7 +26,7 @@ C_DEPS += \
 src/%.o: ../src/%.c
 	@echo Building file: $<
 	@echo Invoking: MicroBlaze gcc compiler
-	mb-gcc -Wall -O0 -g3 -I"/home/adam/RO-PUF/SDK-workspace/characterizer_bsp/microblaze_0/include" -c -fmessage-length=0 -std=c99 -Wl,--no-relax -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	mb-gcc -Wall -O3 -c -fmessage-length=0 -I../../characterizer_bsp/microblaze_0/include -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
 	@echo Finished building: $<
 	@echo ' '
 

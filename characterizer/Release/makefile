@@ -25,21 +25,20 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 ELFSIZE += \
+characterizer.elf.size \
 
 ELFCHECK += \
+characterizer.elf.elfcheck \
 
 
 # All Target
 all: characterizer.elf secondary-outputs
 
-dependents:
-	-cd /home/adam/RO-PUF/SDK-workspace/characterizer/Release && $(MAKE) all
-
 # Tool invocations
-characterizer.elf: $(OBJS) ../src/lscript.ld $(USER_OBJS) /home/adam/RO-PUF/SDK-workspace/characterizer/Release/characterizer.elf
+characterizer.elf: $(OBJS) ../src/lscript.ld $(USER_OBJS)
 	@echo Building target: $@
 	@echo Invoking: MicroBlaze gcc linker
-	mb-gcc -Wl,--no-relax -Wl,-T -Wl,../src/lscript.ld -L../../characterizer_bsp/microblaze_0/lib -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -o"characterizer.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	mb-gcc -Wl,-T -Wl,../src/lscript.ld -L../../characterizer_bsp/microblaze_0/lib -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -o"characterizer.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo Finished building target: $@
 	@echo ' '
 
@@ -64,6 +63,5 @@ secondary-outputs: $(ELFSIZE) $(ELFCHECK)
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/adam/RO-PUF/SDK-workspace/characterizer/Release/characterizer.elf:
 
 -include ../makefile.targets

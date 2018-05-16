@@ -3,8 +3,9 @@
 	<name>characterizer</name>
 	<comment></comment>
 	<projects>
-		<project>standalone_bsp_0</project>
+		<project>characterizer</project>
 		<project>characterizer_bsp</project>
+		<project>hw_hw_platform</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
