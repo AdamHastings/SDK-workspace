@@ -55,14 +55,16 @@ extern void outbyte(char c);
 
 //My defines
 
-#define WARM_UP_TIME 25 //in seconds
+#define WARM_UP_TIME 21 //in seconds
 #define NUM_PUFS 8
 #define DESIRED_WAIT_TIME 15 //in seconds
-#define NUM_ATTEMPTS 10
+#define NUM_ATTEMPTS 12
 
 //RingOsc defines
 #define ENABLE_RING_OSC 0x80000000 //Still the backwards versions.
 #define RESET_RING_OSC  0x40000000
+
+#define INT_MAX 4294967295
 
 #define DEBUG 0
 
@@ -232,7 +234,7 @@ uint64_t ReadRingOsc(uint32_t regAddress)
 	wholeCount = wholeCount << 32;
 	wholeCount = wholeCount + lowerBits;
 
-	xil_printf("0x%8.8x%8.8x\n\r", upperBits, lowerBits);
+	xil_printf("0x%08x%08x\n\r", upperBits, lowerBits);
 
 	return wholeCount;
 }
@@ -416,6 +418,51 @@ void FrequencySort(ringFrequency results[])
 }
 
 
+/*
+ * A slight modification of Adam B's code to print an unsigned 64 bit value.
+ */
+void printValue(uint64_t value)
+{
+	char buf[MAX_BUF];
+	uint16_t digitIndex = 0;
+
+	while (value != 0)
+	{
+		uint16_t digit = value % 10;
+		buf[digitIndex] = '0' + digit;
+		value -= digit;
+		value /= 10;
+		digitIndex++;
+	}
+	buf[digitIndex] = '\0';
+	// Print out in backwards order.
+	int i;
+	for (i=digitIndex-1; i>=0; i--)
+	{
+		xil_printf("%c", buf[i]);
+	}
+	xil_printf("\r\n");
+}
+
+/*
+ * The hardware is a bit odd and doesn't iterate the upper register when the bottom register is full
+ * Instead it happens when it reaches 100000000
+ *
+ * This function prints out the actual number of oscillations.
+ */
+void PrintRealCount(uint32_t top, uint32_t bottom)
+{
+	//First make it into a 64 bit number.
+	uint64_t fullTop = top; //Avoids overflow in the multiplication
+	uint64_t fullClkTicks = CLK_TICKS;
+	uint64_t total = fullTop * fullClkTicks; //CLK_TICKS is what it was set to iterate on
+	total += bottom;
+
+	printValue(total); //Then print it out.
+
+
+
+}
 
 /*
  * Characterize the PUFs in the less traditional way of just measuring all of the frequencies and then
@@ -460,16 +507,18 @@ void CharacterizeByFrequency()
 		}
 		xil_printf("\n\r");
 	}
-	xil_printf("Individual counts (on the last attempt)\n\r");
+	xil_printf("Actual Count (on the last attempt)\n\r");
 	for(int i = 0; i < NUM_PUFS; ++i)
 	{
-		xil_printf("Ring Index: %d Count: 0x%8x%8x \n\r", results[NUM_ATTEMPTS - 1][i].index, results[NUM_ATTEMPTS - 1][i].countHigh, results[NUM_ATTEMPTS - 1][i].countLow);
+		xil_printf("Ring Index: %d Count: ", results[NUM_ATTEMPTS - 1][i].index);
+		PrintRealCount(results[NUM_ATTEMPTS - 1][i].countHigh, results[NUM_ATTEMPTS - 1][i].countLow);
 	}
 
-	xil_printf("Individual counts (on the middle attempt) to se the difference\n\r");
+	xil_printf("Actual counts (on the middle attempt) to see the difference\n\r");
 	for(int i = 0; i < NUM_PUFS; ++i)
 	{
-		xil_printf("Ring Index: %d Count: 0x%8x%8x \n\r", results[NUM_ATTEMPTS/2][i].index, results[NUM_ATTEMPTS/2][i].countHigh, results[NUM_ATTEMPTS/2][i].countLow);
+		xil_printf("Ring Index: %d Count: ", results[NUM_ATTEMPTS - 1][i].index);
+		PrintRealCount(results[NUM_ATTEMPTS/2][i].countHigh, results[NUM_ATTEMPTS/2][i].countLow);
 	}
 
 
