@@ -1,0 +1,11 @@
+Release 14.4 - libgen Xilinx EDK 14.4 Build EDK_P.49d
+ (lin64)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+Command Line: libgen -hw ../hw_hw_platform/system.xml -pe microblaze_0 -log
+libgen.log system.mss 
+
+ERROR:EDK:410 - generic -
+   /home/adam/RO-PUF/SDK-workspace/characterizer_bsp/system.mss line 63 - No IP
+   instance named counter_0 is present in the hardware!
+ERROR:EDK:1206 - Errors occured while parsing MSS file.

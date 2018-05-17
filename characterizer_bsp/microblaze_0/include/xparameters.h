@@ -17,19 +17,6 @@
 
 /******************************************************************/
 
-
-/* Definitions for peripheral COUNTER_0 */
-#define XPAR_COUNTER_0_BASEADDR 0xCE400000
-#define XPAR_COUNTER_0_HIGHADDR 0xCE40FFFF
-
-
-/* Definitions for peripheral DUT_CONTROL_CORE_0 */
-#define XPAR_DUT_CONTROL_CORE_0_BASEADDR 0xC1A00000
-#define XPAR_DUT_CONTROL_CORE_0_HIGHADDR 0xC1A0FFFF
-
-
-/******************************************************************/
-
 /* Definitions for driver BRAM */
 #define XPAR_XBRAM_NUM_INSTANCES 2
 
@@ -96,6 +83,54 @@
 #define XPAR_BRAM_1_WRITE_ACCESS 2
 #define XPAR_BRAM_1_BASEADDR 0x00000000
 #define XPAR_BRAM_1_HIGHADDR 0x00007FFF
+
+
+/******************************************************************/
+
+
+/* Definitions for peripheral DUT_CONTROL_CORE_0 */
+#define XPAR_DUT_CONTROL_CORE_0_BASEADDR 0xC1A00000
+#define XPAR_DUT_CONTROL_CORE_0_HIGHADDR 0xC1A0FFFF
+
+
+/* Definitions for peripheral RING_OSC_0 */
+#define XPAR_RING_OSC_0_BASEADDR 0xC06E0000
+#define XPAR_RING_OSC_0_HIGHADDR 0xC06EFFFF
+
+
+/* Definitions for peripheral RING_OSC_1 */
+#define XPAR_RING_OSC_1_BASEADDR 0xC06C0000
+#define XPAR_RING_OSC_1_HIGHADDR 0xC06CFFFF
+
+
+/* Definitions for peripheral RING_OSC_2 */
+#define XPAR_RING_OSC_2_BASEADDR 0xC06A0000
+#define XPAR_RING_OSC_2_HIGHADDR 0xC06AFFFF
+
+
+/* Definitions for peripheral RING_OSC_3 */
+#define XPAR_RING_OSC_3_BASEADDR 0xC0680000
+#define XPAR_RING_OSC_3_HIGHADDR 0xC068FFFF
+
+
+/* Definitions for peripheral RING_OSC_4 */
+#define XPAR_RING_OSC_4_BASEADDR 0xC0660000
+#define XPAR_RING_OSC_4_HIGHADDR 0xC066FFFF
+
+
+/* Definitions for peripheral RING_OSC_5 */
+#define XPAR_RING_OSC_5_BASEADDR 0xC0640000
+#define XPAR_RING_OSC_5_HIGHADDR 0xC064FFFF
+
+
+/* Definitions for peripheral RING_OSC_6 */
+#define XPAR_RING_OSC_6_BASEADDR 0xC0620000
+#define XPAR_RING_OSC_6_HIGHADDR 0xC062FFFF
+
+
+/* Definitions for peripheral RING_OSC_7 */
+#define XPAR_RING_OSC_7_BASEADDR 0xC0600000
+#define XPAR_RING_OSC_7_HIGHADDR 0xC060FFFF
 
 
 /******************************************************************/
