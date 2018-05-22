@@ -58,7 +58,7 @@ extern void outbyte(char c);
 #define WARM_UP_TIME 21 //in seconds
 #define NUM_PUFS 8
 #define DESIRED_WAIT_TIME 15 //in seconds
-#define NUM_ATTEMPTS 12
+#define NUM_ATTEMPTS 3
 
 //RingOsc defines
 #define ENABLE_RING_OSC 0x80000000 //Still the backwards versions.
@@ -449,8 +449,10 @@ void printValue(uint64_t value)
  * Instead it happens when it reaches 100000000
  *
  * This function prints out the actual number of oscillations.
+ *
+ * returns the total number of oscillations
  */
-void PrintRealCount(uint32_t top, uint32_t bottom)
+uint64_t PrintRealCount(uint32_t top, uint32_t bottom)
 {
 	//First make it into a 64 bit number.
 	uint64_t fullTop = top; //Avoids overflow in the multiplication
@@ -460,8 +462,7 @@ void PrintRealCount(uint32_t top, uint32_t bottom)
 
 	printValue(total); //Then print it out.
 
-
-
+	return total;
 }
 
 /*
@@ -469,11 +470,11 @@ void PrintRealCount(uint32_t top, uint32_t bottom)
  * ranking them in terms of their frequencies.
  *
  */
-
 void CharacterizeByFrequency()
 {
 	ringFrequency results[NUM_ATTEMPTS][NUM_PUFS];
 	XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, (DESIRED_WAIT_TIME * CLK_TICKS));
+	//XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, 0xffffffff);
 	for(int j = 0; j < NUM_ATTEMPTS; ++j) //Run the same test 10 times.
 	{
 		xil_printf("Attempt %d: \n\r", j);
@@ -507,6 +508,17 @@ void CharacterizeByFrequency()
 		}
 		xil_printf("\n\r");
 	}
+
+	/*xil_printf("Printing the percent difference between the highest and the lowest. \n\r");
+	for(int j = 0; j < NUM_ATTEMPTS; ++j)
+	{
+		double highest = PrintRealCount(results[j][0].countHigh, results[j][0].countLow);
+		double lowest = PrintRealCount(results[j][NUM_PUFS].countHigh, results[j][NUM_PUFS].countLow);
+		double percentDifference = (highest - lowest) / highest;
+		xil_printf("Attempt %d: %%%f \n\r", j, percentDifference);
+	}*/
+
+
 	xil_printf("Actual Count (on the last attempt)\n\r");
 	for(int i = 0; i < NUM_PUFS; ++i)
 	{
@@ -521,6 +533,21 @@ void CharacterizeByFrequency()
 		PrintRealCount(results[NUM_ATTEMPTS/2][i].countHigh, results[NUM_ATTEMPTS/2][i].countLow);
 	}
 
+}
+
+/*
+ * Characterizes and takes the average of one ring oscillator.
+ * Hopefully this will be useful in deciding if shorts are actually slowing down the wires.
+ * It will characterize the wire by measuring it's count multiple times and then taking an average.
+ *
+ * ringIndex is the index number of the ring oscillator
+ *
+ * returns nothing
+ */
+void CharacterizeAverage(uint8_t ringIndex)
+{
+	uint64_t results[NUM_ATTEMPTS];
+	XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, (DESIRED_WAIT_TIME * CLK_TICKS));
 
 
 }
@@ -558,14 +585,6 @@ void TestRingOsc()
 	xil_printf("Goodbye........... World!\r\n");
 	xil_printf("Goodbye........... World!\r\n");
 }
-
-
-/*
-void determineIntervals(int seconds)
-{
-	numIntervals = seconds / 15;
-}
-*/
 
 void interrupt_handler_dispatcher(void* ptr) {
 	//Checking the timer interrupt
