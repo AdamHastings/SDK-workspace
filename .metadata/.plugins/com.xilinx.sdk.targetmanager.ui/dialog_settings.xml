@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<section name="Workbench">
-	<item value="/home/adam/RO-PUF/RapidSmith-workspace/modFolder/finishedDesigns/useForTesting.bit" key="hw_hw_platform-bitFile"/>
-	<item value="/home/adam/RO-PUF/SDK-workspace/hw_hw_platform/system_bd.bmm" key="hw_hw_platform-bmmFile"/>
-	<item value="bootloop" key="hw_hw_platform-microblaze_0-initElf"/>
-</section>

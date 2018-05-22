@@ -1,8 +1,0 @@
-################################################################################
-# Automatically-generated file. Do not edit!
-################################################################################
-
-USER_OBJS :=
-
-LIBS := -l-Wl,--start-group,-lxil,-lgcc,-lc,--end-group -l"/home/adam/RO-PUF/SDK-workspace/characterizer_bsp/microblaze_0/lib/libc.a"
-
