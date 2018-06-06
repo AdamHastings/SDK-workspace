@@ -55,7 +55,7 @@ extern void outbyte(char c);
 
 //My defines
 
-#define WARM_UP_TIME 21 //in seconds
+#define WARM_UP_TIME 21 //in seconds //largest value that doesn't cause an overflow
 #define NUM_PUFS 8
 #define DESIRED_WAIT_TIME 15 //in seconds
 #define NUM_ATTEMPTS 3
@@ -67,6 +67,8 @@ extern void outbyte(char c);
 #define INT_MAX 4294967295
 
 #define DEBUG 0
+
+#define RING_TO_TEST 7
 
 //Global Variables needed
 static uint32_t addresses[NUM_PUFS] =
@@ -108,6 +110,10 @@ int numIntervals = 0;
 int currentInterval = 0;
 
 volatile int done = 0;
+
+int stopOneRO = 0;
+uint8_t ringToStop = 0;
+
 
 
 /*
@@ -441,7 +447,7 @@ void printValue(uint64_t value)
 	{
 		xil_printf("%c", buf[i]);
 	}
-	xil_printf("\r\n");
+	//xil_printf("\r\n");
 }
 
 /*
@@ -466,6 +472,72 @@ uint64_t PrintRealCount(uint32_t top, uint32_t bottom)
 }
 
 /*
+ * The same thing as PrintRealCount, except it just return the value. It doesn't print it out.
+ */
+uint64_t GetRealCount(uint32_t top, uint32_t bottom)
+{
+	//First make it into a 64 bit number.
+	uint64_t fullTop = top; //Avoids overflow in the multiplication
+	uint64_t fullClkTicks = CLK_TICKS;
+	uint64_t total = fullTop * fullClkTicks; //CLK_TICKS is what it was set to iterate on
+	total += bottom;
+
+	return total;
+}
+
+
+/*
+ * Exports the results of the Characterize By Frequency into a csv file format
+ * It uses xil_printf so it is assumed that when the program is run it is piped into a csv file for later use
+ *
+ *
+ */
+void ExportResults(ringFrequency results[NUM_ATTEMPTS][NUM_PUFS] )
+{
+	xil_printf("Rankings\n\r");
+	for(int i = 0; i < NUM_ATTEMPTS; ++i)
+	{
+		xil_printf("Attempt %d:, ", i);
+		for(int j = 0; j < NUM_PUFS - 1; ++j)
+		{
+			xil_printf("%d, ", results[i][j].index);
+		}
+		xil_printf("%d\n\r", results[i][NUM_PUFS - 1].index);
+	}
+	xil_printf("\n\r");
+	xil_printf("Frequency (Assuming rankings never changed), ");
+	for(int i = 0; i < NUM_ATTEMPTS; ++i)
+	{
+		xil_printf("Attempt %d, ", i);
+	}
+	xil_printf("Average \n\r");
+	uint64_t ringResults[NUM_ATTEMPTS];
+	for(int j = 0; j < NUM_PUFS; ++j) //going through all of the ring oscs
+	{
+		xil_printf("Ring %d, ", results[NUM_ATTEMPTS - 1][j].index);
+		for(int i = 0; i < NUM_ATTEMPTS; ++i) //printing the individual
+		{
+			ringResults[i] = PrintRealCount(results[i][j].countHigh, results[i][j].countLow);
+			xil_printf(", ");
+		}
+
+		uint64_t average = 0; //now finding the average for that ring.
+		for(int i = 0; i < NUM_ATTEMPTS; ++i)
+		{
+			average += ringResults[i] / NUM_ATTEMPTS; //Rather then add up all of the number and then dividing this divides as it goes to avoid overflow.
+		}
+		printValue(average);
+		xil_printf("\n\r");
+
+	}
+
+
+}
+
+
+
+
+/*
  * Characterize the PUFs in the less traditional way of just measuring all of the frequencies and then
  * ranking them in terms of their frequencies.
  *
@@ -477,7 +549,7 @@ void CharacterizeByFrequency()
 	//XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, 0xffffffff);
 	for(int j = 0; j < NUM_ATTEMPTS; ++j) //Run the same test 10 times.
 	{
-		xil_printf("Attempt %d: \n\r", j);
+		//xil_printf("Attempt %d: \n\r", j);
 		ResetAll();
 		EnableAll();
 		XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID);
@@ -497,6 +569,11 @@ void CharacterizeByFrequency()
 
 		FrequencySort(results[j]);
 	}
+
+	ExportResults(results);
+	return;
+
+	//the code never gets here
 	xil_printf("Printing Frequency results from highest to lowest (Top to Bottom) \n\r");
 	xil_printf("(Attempts Left to Right)\n\r");
 	for(int i = 0; i < NUM_PUFS; ++i)
@@ -508,8 +585,8 @@ void CharacterizeByFrequency()
 		}
 		xil_printf("\n\r");
 	}
-
-	/*xil_printf("Printing the percent difference between the highest and the lowest. \n\r");
+	/*
+	xil_printf("Printing the percent difference between the highest and the lowest. \n\r");
 	for(int j = 0; j < NUM_ATTEMPTS; ++j)
 	{
 		double highest = PrintRealCount(results[j][0].countHigh, results[j][0].countLow);
@@ -548,6 +625,44 @@ void CharacterizeAverage(uint8_t ringIndex)
 {
 	uint64_t results[NUM_ATTEMPTS];
 	XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, (DESIRED_WAIT_TIME * CLK_TICKS));
+	for(int i = 0; i < NUM_ATTEMPTS; ++i) //loop through all of the desired attempts
+	{
+		xil_printf("Attempt %d \n\r", i);
+		ResetRingOsc(addresses[ringIndex]); //reset the value
+		EnableRingOsc(addresses[ringIndex]); //start the ring osc
+		XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID); //start the timer
+		stopOneRO = 1;
+		ringToStop = ringIndex;
+		done = 0;
+		while(!done)
+		{
+			//wait for the timer interrupt
+		} //the ring oscillator should be disabled by the
+
+		//then read the values
+		xil_printf("the value is: ");
+		results[i] = PrintRealCount( RING_OSC_mReadSlaveReg1(addresses[ringIndex], 0),  RING_OSC_mReadSlaveReg0(addresses[ringIndex], 0) );
+
+		//printValue(results[i]);
+	}
+
+	//Then find the average of the wire and print it out.
+	uint64_t average = 0;
+	for(int i = 0; i < NUM_ATTEMPTS; ++i)
+	{
+		average += results[i] / NUM_ATTEMPTS; //Rather then add up all of the number and then dividing this divides as it goes to avoid overflow.
+	}
+
+	/*uint64_t sum = 0;
+	for(int i = 0; i < NUM_ATTEMPTS; ++i)
+	{
+		sum += results[i];
+	}
+	average = sum / NUM_ATTEMPTS;*/
+
+	xil_printf("The average for ring index %d is  ", ringIndex);
+	printValue(average);
+	xil_printf("\n\r\n\r");
 
 
 }
@@ -610,6 +725,22 @@ void interrupt_handler_dispatcher(void* ptr) {
 			XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID);
 		}
 	}
+	else if(stopOneRO) //only stopping one of the ring oscillators
+	{
+		int intc_status = XIntc_GetIntrStatus(XPAR_INTC_0_BASEADDR);
+		if(intc_status & XPAR_XPS_TIMER_0_INTERRUPT_MASK)
+		{
+			stopOneRO = 0;
+			done = 1;
+			XIntc_AckIntr(XPAR_INTC_0_BASEADDR, XPAR_XPS_TIMER_0_INTERRUPT_MASK);
+			DisableRingOsc(addresses[ringToStop]); //stops only the one ring oscillator
+		}
+		else
+		{
+			XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID);
+		}
+
+	}
 	else //generate the CRPs
 	{
 		int intc_status = XIntc_GetIntrStatus(XPAR_INTC_0_BASEADDR);
@@ -617,7 +748,7 @@ void interrupt_handler_dispatcher(void* ptr) {
 		{
 			done = 1;
 			XIntc_AckIntr(XPAR_INTC_0_BASEADDR, XPAR_XPS_TIMER_0_INTERRUPT_MASK);
-			DisableAll();// stops all of the PUFS
+			DisableAll();// stops all of the ROs
 		}
 		else
 		{
@@ -632,7 +763,7 @@ int main()
 {
 	//printf("Hello world");
 
-	xil_printf("Hello world!!!! \n\rProgram Begun\n\r");
+	//xil_printf("Hello world!!!! \n\rProgram Begun\n\r");
 	EnableAll(); //enable all of the oscillators so that they can start warming up.
 	warmedUp = 0;
 
@@ -665,12 +796,14 @@ int main()
 	Status = XTmrCtr_SelfTest(timer0ptr, 0);
 	if (Status != XST_SUCCESS)
 	{
-		print("\r\nTimer counter self test failed\r\n");
+		xil_printf("\r\nTimer counter self test failed\r\n");
 		 return XST_FAILURE;
 	}
 
 	//Configuring the timer
 	XTmrCtr_SetOptions(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, (XTC_AUTO_RELOAD_OPTION|XTC_INT_MODE_OPTION|XTC_DOWN_COUNT_OPTION));
+
+
 	XTmrCtr_SetResetValue(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID, (WARM_UP_TIME*CLK_TICKS));
 
 	XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID);
@@ -679,14 +812,25 @@ int main()
 		//Waiting for the timer interrupt
 	}
 
+	warmedUp = 0;
+	//double the warm up time time
+	XTmrCtr_Start(timer0ptr, XPAR_XPS_TIMER_0_DEVICE_ID);
+	while (!done)
+	{
+		//Waiting for the timer interrupt
+	}
+
 	CharacterizeByFrequency();
+	//CharacterizeAverage(RING_TO_TEST);
+
 
 	DisableAll(); //Make sure that they are all disabled
 	//ReadAll();
 
 
-	xil_printf("Clear the buffer!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\r");
+	xil_printf("done\n\r");
 
 	ResetAll(); //Make sure that all of the ring oscillators are reset. at the end.
 	return 0;
 }
+
